@@ -1,11 +1,5 @@
-from openpyxl import Workbook, load_workbook
+from openpyxl import load_workbook
 from openpyxl.styles import Alignment, PatternFill, Border
-
-workbook = load_workbook(r'C:\Users\Abdykarim.D\PycharmProjects\robot-2t-dwh\working_path\1583_1\Торговый зал АСФ №1_1583.xlsx')
-
-sheet1 = workbook.active
-sheet1.unmerge_cells('A12:C12')
-# merged_cell.alignment = Alignment(horizontal='right', vertical='bottom')
 
 import os
 
@@ -15,8 +9,17 @@ ind = 11
 
 cells = 'ABCDEFGHIJKLM'
 
+workbook = ''
+
 for file in os.listdir(os.path.join(working_path, f'1583_1')):
     print(file)
+
+    if ind == 11:
+        workbook = load_workbook(os.path.join(working_path, f'1583_1\\{file}'))
+
+        sheet1 = workbook.active
+        sheet1.unmerge_cells('A12:C12')
+
     book = load_workbook(os.path.join(working_path, f'1583_1\\{file}'))
     sheet = book.active
 
@@ -49,9 +52,4 @@ for file in os.listdir(os.path.join(working_path, f'1583_1')):
 
     ind += 1
 
-# columns = ['Дата', 'Торговая площадка', 'Компания', 'Количество чеков', '"Выручка, тг с НДС"', '"Выручка, тг без НДС"', 'Оборот, тг с НДС', 'Оборот, тг без НДС', 'Себестоимость', 'Бухгалтерская себестоимость', 'Валовый доход, тг с НДС', '% Наценки', 'Кол-во товаров в чеках']
-#
-# for i in range(len(columns)):
-#     sheet1[cells[i] + '1'].value = columns[i]
-
-workbook.save('example.xlsx')
+workbook.save('result_a.xlsx')
