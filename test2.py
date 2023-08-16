@@ -149,17 +149,17 @@ def one_big_excel():
 
     workbook, sheet1 = None, None
 
-    for file in os.listdir(os.path.join(working_path, f'1583_1')):
+    for file in os.listdir(os.path.join(working_path, f'1583')):
         print(file)
 
         if ind == 11:
 
-            workbook = load_workbook(os.path.join(working_path, f'1583_1\\{file}'))
+            workbook = load_workbook(os.path.join(working_path, f'1583\\{file}'))
 
             sheet1 = workbook.active
             sheet1.unmerge_cells('A12:C12')
 
-        book = load_workbook(os.path.join(working_path, f'1583_1\\{file}'))
+        book = load_workbook(os.path.join(working_path, f'1583\\{file}'))
         sheet = book.active
 
         for i in cells:
@@ -240,10 +240,11 @@ def saving_reports(df4, start_date, end_date):
         sheet['M12'].value = sheet['M11'].value
 
         try:
-            os.makedirs(os.path.join(working_path, '1583_1'))
+            os.makedirs(os.path.join(working_path, '1583'))
         except:
             pass
-        book.save(os.path.join(working_path, f'1583_1\\{df4["Название филиала"].iloc[i]}_1583.xlsx'))
+
+        book.save(os.path.join(working_path, f'1583\\{start_date}_{end_date}_1583_{df4["Номер объекта"].iloc[i]}.xlsx'))
 
 
 def report_290(branches, branch_id, start_date, end_date):
@@ -544,61 +545,27 @@ if __name__ == '__main__':
     end_date = str(last_day_of_previous_month)
 
     # print(start_date, end_date)
-
-    # # ? 290 report
-    all_branches_ids = get_all_branches()
-
-    print(all_branches_ids, len(all_branches_ids))
-
-    for i in range(len(all_branches_ids)):
-
-        print(f'Started {i}')
-        try:
-            current_branch = get_store_ids_by_branch_id(all_branches_ids['Номера филиалов'].iloc[i])
-
-            # print(current_branch['Код магазина'].iloc[0])
-
-            current_stores = list(current_branch['Номер магазина'])
-
-            current_stores = [f"'{el}'" for el in current_stores]
-
-            current_stores = ', '.join(f"{el}" for el in current_stores)
-            print(current_stores)
-            # break
-            start_time = time.time()
-            df = report_290(current_stores, current_branch['Код магазина'].iloc[0], datetime.datetime.strptime(start_date, "%Y-%m-%d").strftime("%d.%m.%Y"), datetime.datetime.strptime(end_date, "%Y-%m-%d").strftime("%d.%m.%Y"))
-            end_time = time.time()
-
-            # print(df, df['Название магазина'])
-
-            print('Executed Time:', round(end_time - start_time))
-
-        except Exception as exc:
-            print(f'Error occured: {exc}')
-
     # ? 1583 report
-    # df = first_request(start_date, end_date)
-    #
-    # df1 = second_request(start_date, end_date)
-    #
-    # df4 = pd.concat([df1, df], join='inner', axis=1)
-    #
-    # df4.columns = ['Номер филиала', 'Оборот, тг с НДС', 'Оборот, тг без НДС', 'Себестоимость',
-    #                'Бухгалтерская себестоимость', 'Номер филиала1', 'Номер объекта',
-    #                'Название филиала', 'Название компании', 'Количество товаров в чеке', 'Выручка, тг с НДС', 'Выручка, тг без НДС', 'Количество чеков']
-    # df4.insert(1, 'Номер объекта', df4.pop('Номер объекта'))
-    # df4.insert(2, 'Название филиала', df4.pop('Название филиала'))
-    # df4.insert(3, 'Название компании', df4.pop('Название компании'))
-    #
-    # df4 = df4.drop(['Номер филиала1'], axis=1)
-    # print('Saving')
-    # df4.to_excel('sdfdfsf.xlsx')
-    # # exit()
-    # saving_reports(df4, start_date, end_date)
-    #
-    # one_big_excel()
-    # time_finished = time.time()
-    #
-    # send_message_to_tg(tg_token, chat_id, f'Выгрузка отчёта 1583 завершилась.\nЗатраченное время: {str(time_finished - time_started)[:6]}c\nКоличесвто филиалов: {len(df4)}')
-    #
-    # print('Saved successfully')
+    df = first_request(start_date, end_date)
+
+    df1 = second_request(start_date, end_date)
+
+    df4 = pd.concat([df1, df], join='inner', axis=1)
+
+    df4.columns = ['Номер филиала', 'Оборот, тг с НДС', 'Оборот, тг без НДС', 'Себестоимость',
+                   'Бухгалтерская себестоимость', 'Номер филиала1', 'Номер объекта',
+                   'Название филиала', 'Название компании', 'Количество товаров в чеке', 'Выручка, тг с НДС', 'Выручка, тг без НДС', 'Количество чеков']
+    df4.insert(1, 'Номер объекта', df4.pop('Номер объекта'))
+    df4.insert(2, 'Название филиала', df4.pop('Название филиала'))
+    df4.insert(3, 'Название компании', df4.pop('Название компании'))
+
+    df4 = df4.drop(['Номер филиала1'], axis=1)
+    print('Saving')
+    df4.to_excel('sdfdfsf.xlsx')
+    # exit()
+    saving_reports(df4, start_date, end_date)
+
+    one_big_excel()
+    time_finished = time.time()
+
+    print('Saved successfully')
