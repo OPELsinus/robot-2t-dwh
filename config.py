@@ -6,6 +6,7 @@ from logging.handlers import RotatingFileHandler, TimedRotatingFileHandler
 from pathlib import Path
 
 import urllib3
+from pywinauto import keyboard
 
 from tools import update_credentials, json_read, prevent_auto_lock, PostHandler
 

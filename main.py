@@ -4,8 +4,9 @@ import sys
 import time
 
 import openpyxl
+from openpyxl import load_workbook, Workbook
 
-from config import working_path, db_name, db_username, db_password, chat_id, tg_token
+from config import working_path, db_name, db_username, db_password, chat_id, tg_token, logger
 
 import psycopg2
 import pandas as pd
@@ -55,7 +56,7 @@ def first_request(start_date, end_date):
 
     cur.execute(query)
 
-    print('Executed')
+    logger.info('Executed first request')
 
     df = pd.DataFrame(cur.fetchall())
 
@@ -116,7 +117,7 @@ def second_request(start_date, end_date):
 
     cur.execute(query)
 
-    print('Executed')
+    logger.info('Executed second request')
 
     df1 = pd.DataFrame(cur.fetchall())
 
@@ -150,7 +151,7 @@ def one_big_excel():
     workbook, sheet1 = None, None
 
     for file in os.listdir(os.path.join(working_path, f'1583_1')):
-        print(file)
+        logger.info(file)
 
         if ind == 11:
 
@@ -240,10 +241,11 @@ def saving_reports(df4, start_date, end_date):
         sheet['M12'].value = sheet['M11'].value
 
         try:
-            os.makedirs(os.path.join(working_path, '1583_1'))
+            os.makedirs(os.path.join(working_path, '1583'))
         except:
             pass
-        book.save(os.path.join(working_path, f'1583_1\\{df4["Название филиала"].iloc[i]}_1583.xlsx'))
+
+        book.save(os.path.join(working_path, f'1583\\{start_date}_{end_date}_1583_{df4["Номер объекта"].iloc[i]}.xlsx'))
 
 
 def report_290(branches, branch_id, start_date, end_date):
@@ -470,8 +472,14 @@ def report_290(branches, branch_id, start_date, end_date):
     # print((sum(df1['Товарный остаток на конец, тг']) - sum(df1['Сумма проблемного прихода'])) / 1000)
 
     saving_path = os.path.join(working_path, '290')
-    df1.to_excel(os.path.join(saving_path, f'{start_date}_{end_date}_{branch_id}.xlsx'), index=False)
-    print('Saved')
+
+    try:
+        os.makedirs(saving_path)
+    except:
+        pass
+
+    df1.to_excel(os.path.join(saving_path, f'{start_date}_{end_date}_290_{branch_id}.xlsx'), index=False)
+    logger.info('Saved')
     return df1
 
 
@@ -490,7 +498,7 @@ def get_all_branches():
 
     cur.execute(query)
 
-    print('Executed')
+    logger.info('Executed get_all_branches request')
 
     df1 = pd.DataFrame(cur.fetchall())
 
@@ -518,7 +526,7 @@ def get_store_ids_by_branch_id(branch_id):
 
     cur.execute(query)
 
-    print('Executed')
+    logger.info('Executed get_store_ids_by_branch_id request')
 
     df1 = pd.DataFrame(cur.fetchall())
 
@@ -528,6 +536,89 @@ def get_store_ids_by_branch_id(branch_id):
     df1.columns = ["Номер магазина", "Код магазина", "Название магазина"]
 
     return df1
+
+
+def create_final_big_excel(end_date):
+
+    months = [
+        'Январь',
+        'Февраль',
+        'Март',
+        'Апрель',
+        'Май',
+        'Июнь',
+        'Июль',
+        'Август',
+        'Сентябрь',
+        'Октябрь',
+        'Ноябрь',
+        'Декабрь'
+    ]
+
+    dick = dict()
+
+    for file in os.listdir(os.path.join(working_path, '1583')):
+        code = file.split('_')[-1].split('.')[0]
+
+        book = load_workbook(os.path.join(os.path.join(working_path, '1583'), file))
+
+        sheet = book.active
+
+        value = round(float(sheet[f'H12'].value) / 1000)
+
+        dick.update({code: [str(sheet[f'C11'].value)]})
+        dick.get(code).append(value)
+        dick.get(code).append(round(value - (value * 15 / 100)))
+
+        book.close()
+
+    for file in os.listdir(os.path.join(working_path, '290')):
+        code = file.split('_')[-1].split('.')[0]
+        if code in dick.keys():
+            df = pd.read_excel(os.path.join(os.path.join(working_path, '290'), file))
+
+            value = round((sum(df['Товарный остаток на конец, тг']) - sum(df['Сумма проблемного прихода'])) / 1000)
+
+            dick.get(code).append(value)
+
+    book = Workbook()
+
+    sheet = book.active
+
+    month = int(end_date.split('.')[1])
+
+    letters = 'DEFGHIJKLMNO'
+
+    for ind, letter in enumerate(letters):
+        sheet[f'{letter}1'].value = months[ind]
+
+    start_row = 0
+    rows_to_merge = 3
+
+    for i in range(len(dick)):
+        key = list(dick.keys())[i]
+        values = dick.get(key)
+
+        sheet[f'A{start_row + 2}'].value = int(key)
+        sheet.merge_cells(f'A{start_row + 2}:A{start_row + 4}')
+
+        sheet[f'B{start_row + 2}'].value = values[0]
+        sheet.merge_cells(f'B{start_row + 2}:B{start_row + 4}')
+
+        sheet[f'C{start_row + 2}'].value = 'Всего'
+        sheet[f'C{start_row + 3}'].value = 'Из них продовольственные товары'
+        sheet[f'C{start_row + 4}'].value = 'Товарные запасы на конец отчетного месяца'
+
+        sheet[f'{letters[month - 1]}{start_row + 2}'].value = values[1]
+        sheet[f'{letters[month - 1]}{start_row + 3}'].value = values[2]
+        sheet[f'{letters[month - 1]}{start_row + 4}'].value = values[3]
+
+        start_row += rows_to_merge
+
+    sheet.column_dimensions['B'].width = 44
+
+    book.save('last final.xlsx')
+    book.close()
 
 
 if __name__ == '__main__':
@@ -548,11 +639,11 @@ if __name__ == '__main__':
     # # ? 290 report
     all_branches_ids = get_all_branches()
 
-    print(all_branches_ids, len(all_branches_ids))
+    logger.info(all_branches_ids, len(all_branches_ids))
 
     for i in range(len(all_branches_ids)):
 
-        print(f'Started {i}')
+        logger.info(f'Started {i}')
         try:
             current_branch = get_store_ids_by_branch_id(all_branches_ids['Номера филиалов'].iloc[i])
 
@@ -563,7 +654,7 @@ if __name__ == '__main__':
             current_stores = [f"'{el}'" for el in current_stores]
 
             current_stores = ', '.join(f"{el}" for el in current_stores)
-            print(current_stores)
+            logger.info(current_stores)
             # break
             start_time = time.time()
             df = report_290(current_stores, current_branch['Код магазина'].iloc[0], datetime.datetime.strptime(start_date, "%Y-%m-%d").strftime("%d.%m.%Y"), datetime.datetime.strptime(end_date, "%Y-%m-%d").strftime("%d.%m.%Y"))
@@ -571,34 +662,38 @@ if __name__ == '__main__':
 
             # print(df, df['Название магазина'])
 
-            print('Executed Time:', round(end_time - start_time))
+            logger.info(f'Executed Time: {round(end_time - start_time)}')
 
         except Exception as exc:
-            print(f'Error occured: {exc}')
+            logger.info(f'Error occured: {exc}')
 
     # ? 1583 report
-    # df = first_request(start_date, end_date)
-    #
-    # df1 = second_request(start_date, end_date)
-    #
-    # df4 = pd.concat([df1, df], join='inner', axis=1)
-    #
-    # df4.columns = ['Номер филиала', 'Оборот, тг с НДС', 'Оборот, тг без НДС', 'Себестоимость',
-    #                'Бухгалтерская себестоимость', 'Номер филиала1', 'Номер объекта',
-    #                'Название филиала', 'Название компании', 'Количество товаров в чеке', 'Выручка, тг с НДС', 'Выручка, тг без НДС', 'Количество чеков']
-    # df4.insert(1, 'Номер объекта', df4.pop('Номер объекта'))
-    # df4.insert(2, 'Название филиала', df4.pop('Название филиала'))
-    # df4.insert(3, 'Название компании', df4.pop('Название компании'))
-    #
-    # df4 = df4.drop(['Номер филиала1'], axis=1)
-    # print('Saving')
-    # df4.to_excel('sdfdfsf.xlsx')
-    # # exit()
-    # saving_reports(df4, start_date, end_date)
-    #
-    # one_big_excel()
-    # time_finished = time.time()
-    #
-    # send_message_to_tg(tg_token, chat_id, f'Выгрузка отчёта 1583 завершилась.\nЗатраченное время: {str(time_finished - time_started)[:6]}c\nКоличесвто филиалов: {len(df4)}')
+    df = first_request(start_date, end_date)
+
+    df1 = second_request(start_date, end_date)
+
+    df4 = pd.concat([df1, df], join='inner', axis=1)
+
+    df4.columns = ['Номер филиала', 'Оборот, тг с НДС', 'Оборот, тг без НДС', 'Себестоимость',
+                   'Бухгалтерская себестоимость', 'Номер филиала1', 'Номер объекта',
+                   'Название филиала', 'Название компании', 'Количество товаров в чеке', 'Выручка, тг с НДС', 'Выручка, тг без НДС', 'Количество чеков']
+    df4.insert(1, 'Номер объекта', df4.pop('Номер объекта'))
+    df4.insert(2, 'Название филиала', df4.pop('Название филиала'))
+    df4.insert(3, 'Название компании', df4.pop('Название компании'))
+
+    df4 = df4.drop(['Номер филиала1'], axis=1)
+    logger.info('Saving')
+
+    logger.info('Saving reports')
+    saving_reports(df4, start_date, end_date)
+
+    one_big_excel()
+
+    logger.info('Started final big excel')
+    create_final_big_excel(end_date)
+
+    time_finished = time.time()
+
+    send_message_to_tg(tg_token, chat_id, f'Выгрузка отчёта 1583 завершилась.\nЗатраченное время: {str(time_finished - time_started)[:6]}c\nКоличесвто филиалов: {len(df4)}')
     #
     # print('Saved successfully')
