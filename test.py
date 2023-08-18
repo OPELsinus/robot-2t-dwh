@@ -20,10 +20,8 @@
 #
 #
 #
-from config import tg_token, chat_id
-from tools import send_message_to_tg
 
-send_message_to_tg(tg_token, chat_id, 'Дратути тест')
+a = '18.07.2023'
 
 #
 #

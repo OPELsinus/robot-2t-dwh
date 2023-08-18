@@ -1,5 +1,6 @@
 import datetime
 import os
+import shutil
 import sys
 import time
 
@@ -609,16 +610,39 @@ def create_final_big_excel(end_date):
         sheet[f'C{start_row + 3}'].value = 'Из них продовольственные товары'
         sheet[f'C{start_row + 4}'].value = 'Товарные запасы на конец отчетного месяца'
 
-        sheet[f'{letters[month - 1]}{start_row + 2}'].value = values[1]
-        sheet[f'{letters[month - 1]}{start_row + 3}'].value = values[2]
-        sheet[f'{letters[month - 1]}{start_row + 4}'].value = values[3]
+        sheet[f'{letters[month]}{start_row + 2}'].value = values[1]
+        sheet[f'{letters[month]}{start_row + 3}'].value = values[2]
+        sheet[f'{letters[month]}{start_row + 4}'].value = values[3]
 
         start_row += rows_to_merge
 
     sheet.column_dimensions['B'].width = 44
 
-    book.save('last final.xlsx')
+    try:
+        os.makedirs(os.path.join(working_path, f'Выргузка 2Т'))
+    except:
+        ...
+
+    book.save(os.path.join(os.path.join(working_path, 'Выргузка 2Т'), 'result.xlsx'))
     book.close()
+
+
+def archive_files(start_date, end_date, value):
+
+    folder_path = os.path.join(working_path, f'{value}')
+
+    try:
+        os.makedirs(os.path.join(working_path, f'Выргузка 2Т'))
+    except:
+        pass
+    destination_folder = os.path.join(working_path, f'Выргузка 2Т')
+
+    zip_file_name = f'Все филиалы {value} за {start_date}_{end_date}'
+    zip_file_path = os.path.join(destination_folder, zip_file_name)
+
+    shutil.make_archive(zip_file_path, 'zip', folder_path)
+
+    return zip_file_path
 
 
 if __name__ == '__main__':
@@ -633,10 +657,11 @@ if __name__ == '__main__':
 
     start_date = str(last_day_of_preprevious_month)
     end_date = str(last_day_of_previous_month)
+    end_date1 = last_day_of_preprevious_month.strftime('%d.%m.%Y')
 
     # print(start_date, end_date)
 
-    # # ? 290 report
+    # ? 290 report
     all_branches_ids = get_all_branches()
 
     logger.info(all_branches_ids, len(all_branches_ids))
@@ -690,10 +715,14 @@ if __name__ == '__main__':
     one_big_excel()
 
     logger.info('Started final big excel')
-    create_final_big_excel(end_date)
+
+    create_final_big_excel(end_date1)
+
+    archive_files(start_date, end_date, '290')
+    archive_files(start_date, end_date, '1583')
 
     time_finished = time.time()
 
     send_message_to_tg(tg_token, chat_id, f'Выгрузка отчёта 1583 завершилась.\nЗатраченное время: {str(time_finished - time_started)[:6]}c\nКоличесвто филиалов: {len(df4)}')
-    #
-    # print('Saved successfully')
+
+    print('Saved successfully')
