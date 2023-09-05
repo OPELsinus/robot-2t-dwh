@@ -21,7 +21,8 @@
 #
 #
 
-a = '18.07.2023'
+import numpy as np
+
 
 #
 #

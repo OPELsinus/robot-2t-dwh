@@ -7,7 +7,7 @@ import time
 import openpyxl
 from openpyxl import load_workbook, Workbook
 
-from config import working_path, db_name, db_username, db_password, chat_id, tg_token, logger
+from config import saving_path, db_name, db_username, db_password, chat_id, tg_token, logger, saving_path
 
 import psycopg2
 import pandas as pd
@@ -143,7 +143,7 @@ def one_big_excel():
 
     import os
 
-    from config import working_path
+    from config import saving_path
 
     ind = 11
 
@@ -151,17 +151,17 @@ def one_big_excel():
 
     workbook, sheet1 = None, None
 
-    for file in os.listdir(os.path.join(working_path, f'1583_1')):
+    for file in os.listdir(os.path.join(saving_path, f'1583')):
         logger.info(file)
 
         if ind == 11:
 
-            workbook = load_workbook(os.path.join(working_path, f'1583_1\\{file}'))
+            workbook = load_workbook(os.path.join(saving_path, f'1583\\{file}'))
 
             sheet1 = workbook.active
             sheet1.unmerge_cells('A12:C12')
 
-        book = load_workbook(os.path.join(working_path, f'1583_1\\{file}'))
+        book = load_workbook(os.path.join(saving_path, f'1583\\{file}'))
         sheet = book.active
 
         for i in cells:
@@ -242,11 +242,11 @@ def saving_reports(df4, start_date, end_date):
         sheet['M12'].value = sheet['M11'].value
 
         try:
-            os.makedirs(os.path.join(working_path, '1583'))
+            os.makedirs(os.path.join(saving_path, '1583'))
         except:
             pass
 
-        book.save(os.path.join(working_path, f'1583\\{start_date}_{end_date}_1583_{df4["Номер объекта"].iloc[i]}.xlsx'))
+        book.save(os.path.join(saving_path, f'1583\\{start_date}_{end_date}_1583_{df4["Номер объекта"].iloc[i]}.xlsx'))
 
 
 def report_290(branches, branch_id, start_date, end_date):
@@ -472,14 +472,14 @@ def report_290(branches, branch_id, start_date, end_date):
     # print(sum(df1['Сумма проблемного прихода']))
     # print((sum(df1['Товарный остаток на конец, тг']) - sum(df1['Сумма проблемного прихода'])) / 1000)
 
-    saving_path = os.path.join(working_path, '290')
+    saving_path_ = os.path.join(saving_path, '290')
 
     try:
-        os.makedirs(saving_path)
+        os.makedirs(saving_path_)
     except:
         pass
 
-    df1.to_excel(os.path.join(saving_path, f'{start_date}_{end_date}_290_{branch_id}.xlsx'), index=False)
+    df1.to_excel(os.path.join(saving_path_, f'{start_date}_{end_date}_290_{branch_id}.xlsx'), index=False)
     logger.info('Saved')
     return df1
 
@@ -558,10 +558,10 @@ def create_final_big_excel(end_date):
 
     dick = dict()
 
-    for file in os.listdir(os.path.join(working_path, '1583')):
+    for file in os.listdir(os.path.join(saving_path, '1583')):
         code = file.split('_')[-1].split('.')[0]
 
-        book = load_workbook(os.path.join(os.path.join(working_path, '1583'), file))
+        book = load_workbook(os.path.join(os.path.join(saving_path, '1583'), file))
 
         sheet = book.active
 
@@ -573,10 +573,10 @@ def create_final_big_excel(end_date):
 
         book.close()
 
-    for file in os.listdir(os.path.join(working_path, '290')):
+    for file in os.listdir(os.path.join(saving_path, '290')):
         code = file.split('_')[-1].split('.')[0]
         if code in dick.keys():
-            df = pd.read_excel(os.path.join(os.path.join(working_path, '290'), file))
+            df = pd.read_excel(os.path.join(os.path.join(saving_path, '290'), file))
 
             value = round((sum(df['Товарный остаток на конец, тг']) - sum(df['Сумма проблемного прихода'])) / 1000)
 
@@ -586,7 +586,7 @@ def create_final_big_excel(end_date):
 
     sheet = book.active
 
-    month = int(end_date.split('.')[1])
+    month = int(end_date.split('.')[1]) - 1
 
     letters = 'DEFGHIJKLMNO'
 
@@ -609,33 +609,36 @@ def create_final_big_excel(end_date):
         sheet[f'C{start_row + 2}'].value = 'Всего'
         sheet[f'C{start_row + 3}'].value = 'Из них продовольственные товары'
         sheet[f'C{start_row + 4}'].value = 'Товарные запасы на конец отчетного месяца'
-
+        print(values, key)
         sheet[f'{letters[month]}{start_row + 2}'].value = values[1]
         sheet[f'{letters[month]}{start_row + 3}'].value = values[2]
-        sheet[f'{letters[month]}{start_row + 4}'].value = values[3]
+        try:
+            sheet[f'{letters[month]}{start_row + 4}'].value = values[3]
+        except:
+            pass
 
         start_row += rows_to_merge
 
     sheet.column_dimensions['B'].width = 44
 
     try:
-        os.makedirs(os.path.join(working_path, f'Выргузка 2Т'))
+        os.makedirs(os.path.join(saving_path, f'Выргузка 2Т'))
     except:
         ...
 
-    book.save(os.path.join(os.path.join(working_path, 'Выргузка 2Т'), 'result.xlsx'))
+    book.save(os.path.join(os.path.join(saving_path, 'Выргузка 2Т'), '!result.xlsx'))
     book.close()
 
 
 def archive_files(start_date, end_date, value):
 
-    folder_path = os.path.join(working_path, f'{value}')
+    folder_path = os.path.join(saving_path, f'{value}')
 
     try:
-        os.makedirs(os.path.join(working_path, f'Выргузка 2Т'))
+        os.makedirs(os.path.join(saving_path, f'Выргузка 2Т'))
     except:
         pass
-    destination_folder = os.path.join(working_path, f'Выргузка 2Т')
+    destination_folder = os.path.join(saving_path, f'Выргузка 2Т')
 
     zip_file_name = f'Все филиалы {value} за {start_date}_{end_date}'
     zip_file_path = os.path.join(destination_folder, zip_file_name)
@@ -651,24 +654,30 @@ if __name__ == '__main__':
 
     today = datetime.date.today()
     first_day_of_current_month = datetime.date(today.year, today.month, 1)
-    last_day_of_previous_month = first_day_of_current_month - datetime.timedelta(days=1)
-    first_day_of_previous_month = datetime.date(last_day_of_previous_month.year, last_day_of_previous_month.month, 1)
-    last_day_of_preprevious_month = first_day_of_previous_month - datetime.timedelta(days=1)
 
-    start_date = str(last_day_of_preprevious_month)
-    end_date = str(last_day_of_previous_month)
-    end_date1 = last_day_of_preprevious_month.strftime('%d.%m.%Y')
+    if today.month == 12:
+        last_day_of_current_month = datetime.date(today.year + 1, 1, 1) - datetime.timedelta(days=1)
+    else:
+        last_day_of_current_month = datetime.date(today.year, today.month + 1, 1) - datetime.timedelta(days=1)
+    print(first_day_of_current_month, last_day_of_current_month)
+    # last_day_of_previous_month = first_day_of_current_month - datetime.timedelta(days=1)
+    # first_day_of_previous_month = datetime.date(last_day_of_previous_month.year, last_day_of_previous_month.month, 1)
+    # last_day_of_preprevious_month = first_day_of_previous_month - datetime.timedelta(days=1)
+
+    start_date = str(first_day_of_current_month)
+    end_date = str(last_day_of_current_month)
+    end_date1 = last_day_of_current_month.strftime('%d.%m.%Y')
 
     # print(start_date, end_date)
 
     # ? 290 report
     all_branches_ids = get_all_branches()
 
-    logger.info(all_branches_ids, len(all_branches_ids))
-
+    # logger.info(all_branches_ids, len(all_branches_ids))
+    print(all_branches_ids)
     for i in range(len(all_branches_ids)):
-
-        logger.info(f'Started {i}')
+        #
+        logger.info(f'Started {i} / {len(all_branches_ids)}')
         try:
             current_branch = get_store_ids_by_branch_id(all_branches_ids['Номера филиалов'].iloc[i])
 
@@ -680,6 +689,7 @@ if __name__ == '__main__':
 
             current_stores = ', '.join(f"{el}" for el in current_stores)
             logger.info(current_stores)
+            print(current_stores)
             # break
             start_time = time.time()
             df = report_290(current_stores, current_branch['Код магазина'].iloc[0], datetime.datetime.strptime(start_date, "%Y-%m-%d").strftime("%d.%m.%Y"), datetime.datetime.strptime(end_date, "%Y-%m-%d").strftime("%d.%m.%Y"))
@@ -707,9 +717,9 @@ if __name__ == '__main__':
     df4.insert(3, 'Название компании', df4.pop('Название компании'))
 
     df4 = df4.drop(['Номер филиала1'], axis=1)
-    logger.info('Saving')
+    # logger.info('Saving')
 
-    logger.info('Saving reports')
+    # logger.info('Saving reports')
     saving_reports(df4, start_date, end_date)
 
     one_big_excel()
@@ -718,11 +728,11 @@ if __name__ == '__main__':
 
     create_final_big_excel(end_date1)
 
-    archive_files(start_date, end_date, '290')
+    # archive_files(start_date, end_date, '290')
     archive_files(start_date, end_date, '1583')
 
     time_finished = time.time()
 
-    send_message_to_tg(tg_token, chat_id, f'Выгрузка отчёта 1583 завершилась.\nЗатраченное время: {str(time_finished - time_started)[:6]}c\nКоличесвто филиалов: {len(df4)}')
+    # send_message_to_tg(tg_token, chat_id, f'Выгрузка отчёта 1583 завершилась.\nЗатраченное время: {str(time_finished - time_started)[:6]}c\nКоличесвто филиалов: {len(df4)}')
 
     print('Saved successfully')

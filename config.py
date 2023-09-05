@@ -46,6 +46,8 @@ db_username = global_env_data['adb_db_username']
 db_password = global_env_data['adb_db_password']
 db_name = global_env_data['adb_db_name']
 
+robot_name = 'robot-2t-dwh'
+
 basic_format = '%(asctime)s%(levelname)s%(message)s'
 date_format = '%Y-%m-%d,%H:%M:%S'
 logging.basicConfig(level=logging.INFO, format=basic_format, datefmt=date_format)
@@ -54,7 +56,7 @@ logger = logging.getLogger(logger_name)
 formatter = logging.Formatter(basic_format, datefmt=date_format)
 if len(sys.argv) == 1:
     sys.argv.append('dev')
-log_path = global_path.joinpath(f'.agent\\robot-2t-dwh\\{socket.gethostbyname(socket.gethostname())}\\{sys.argv[1]}.txt')
+log_path = global_path.joinpath(f'.agent\\{robot_name}\\{socket.gethostbyname(socket.gethostname())}\\{sys.argv[1]}.txt')
 log_path.parent.mkdir(exist_ok=True, parents=True)
 file_handler = TimedRotatingFileHandler(log_path.__str__(), 'W3', 1, 50, "utf-8")
 file_handler.setFormatter(formatter)
@@ -62,13 +64,19 @@ file_handler.setLevel(logging.DEBUG)
 logger.addHandler(file_handler)
 logger.setLevel(logging.DEBUG)
 
-config_path = global_path.joinpath(f'.agent\\robot-2t-dwh\\{socket.gethostbyname(socket.gethostname())}\\config.json')
+
+config_path = global_path.joinpath(f'.agent\\{robot_name}\\{socket.gethostbyname(socket.gethostname())}\\config.json')
 config_data = json_read(config_path)
 chat_id = config_data['chat_id']
 tg_token = global_env_data['tg_token']
 download_path = Path.home().joinpath('downloads')
 working_path = root_path.joinpath('working_path')
 working_path.mkdir(exist_ok=True, parents=True)
+
+saving_path = global_path.joinpath(f".agent\\{robot_name}\\Output")
+saving_path.mkdir(exist_ok=True, parents=True)
+# reports_2t = download_path.joinpath('reports_2t')
+# reports_2t.mkdir(exist_ok=True, parents=True)
 
 if ctypes.windll.user32.GetKeyboardLayout(0) != 67699721:
     __err__ = 'Смените раскладку на ENG'
