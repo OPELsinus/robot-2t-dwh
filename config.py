@@ -64,7 +64,6 @@ file_handler.setLevel(logging.DEBUG)
 logger.addHandler(file_handler)
 logger.setLevel(logging.DEBUG)
 
-
 config_path = global_path.joinpath(f'.agent\\{robot_name}\\{socket.gethostbyname(socket.gethostname())}\\config.json')
 config_data = json_read(config_path)
 chat_id = config_data['chat_id']

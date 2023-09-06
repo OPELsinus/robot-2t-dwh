@@ -3,16 +3,18 @@ import os
 import shutil
 import sys
 import time
+from contextlib import suppress
+from pathlib import Path
 
 import openpyxl
 from openpyxl import load_workbook, Workbook
 
-from config import saving_path, db_name, db_username, db_password, chat_id, tg_token, logger, saving_path
+from config import saving_path, db_name, db_username, db_password, chat_id, tg_token, logger, saving_path, owa_username, owa_password
 
 import psycopg2
 import pandas as pd
 
-from tools import send_message_to_tg
+from tools import send_message_to_tg, update_credentials
 
 
 def first_request(start_date, end_date):
@@ -246,7 +248,7 @@ def saving_reports(df4, start_date, end_date):
         except:
             pass
 
-        book.save(os.path.join(saving_path, f'1583\\{start_date}_{end_date}_1583_{df4["Номер объекта"].iloc[i]}.xlsx'))
+        book.save(os.path.join(saving_path, f'1583\\{start_date.replace(".", "_")}_{end_date.replace(".", "_")}_1583_{df4["Номер объекта"].iloc[i]}.xlsx'))
 
 
 def report_290(branches, branch_id, start_date, end_date):
@@ -479,7 +481,7 @@ def report_290(branches, branch_id, start_date, end_date):
     except:
         pass
 
-    df1.to_excel(os.path.join(saving_path_, f'{start_date}_{end_date}_290_{branch_id}.xlsx'), index=False)
+    df1.to_excel(os.path.join(saving_path_, f'{start_date.replace(".", "_")}_{end_date.replace(".", "_")}_290_{branch_id}.xlsx'), index=False)
     logger.info('Saved')
     return df1
 
@@ -650,6 +652,15 @@ def archive_files(start_date, end_date, value):
 
 if __name__ == '__main__':
 
+    update_credentials(Path(r'\\172.16.8.87\d'), owa_username, owa_password)
+
+    with suppress(Exception):
+        shutil.rmtree(os.path.join(saving_path, '290'))
+    with suppress(Exception):
+        shutil.rmtree(os.path.join(saving_path, '1583'))
+    with suppress(Exception):
+        shutil.rmtree(os.path.join(saving_path, 'Выргузка 2Т'))
+
     time_started = time.time()
 
     today = datetime.date.today()
@@ -658,7 +669,7 @@ if __name__ == '__main__':
     if today.month == 12:
         last_day_of_current_month = datetime.date(today.year + 1, 1, 1) - datetime.timedelta(days=1)
     else:
-        last_day_of_current_month = datetime.date(today.year, today.month + 1, 1) - datetime.timedelta(days=1)
+        last_day_of_current_month = datetime.date(today.year, today.month, 6) - datetime.timedelta(days=1)
     print(first_day_of_current_month, last_day_of_current_month)
     # last_day_of_previous_month = first_day_of_current_month - datetime.timedelta(days=1)
     # first_day_of_previous_month = datetime.date(last_day_of_previous_month.year, last_day_of_previous_month.month, 1)
