@@ -654,27 +654,27 @@ if __name__ == '__main__':
 
     update_credentials(Path(r'\\172.16.8.87\d'), owa_username, owa_password)
 
-    with suppress(Exception):
-        shutil.rmtree(os.path.join(saving_path, '290'))
-    with suppress(Exception):
-        shutil.rmtree(os.path.join(saving_path, '1583'))
-    with suppress(Exception):
-        shutil.rmtree(os.path.join(saving_path, 'Выргузка 2Т'))
+    # with suppress(Exception):
+    #     shutil.rmtree(os.path.join(saving_path, '290'))
+    # with suppress(Exception):
+    #     shutil.rmtree(os.path.join(saving_path, '1583'))
+    # with suppress(Exception):
+    #     shutil.rmtree(os.path.join(saving_path, 'Выргузка 2Т'))
 
     time_started = time.time()
 
-    today = datetime.date.today()
-    first_day_of_current_month = datetime.date(today.year, today.month, 1)
-
-    if today.month == 12:
-        last_day_of_current_month = datetime.date(today.year + 1, 1, 1) - datetime.timedelta(days=1)
-    else:
-        last_day_of_current_month = datetime.date(today.year, today.month, 6) - datetime.timedelta(days=1)
+    today = datetime.date(2023, 9, 28)
+    first_day_of_current_month = today - datetime.timedelta(days=30)  # datetime.date(today.year, today.month, 1)
+    last_day_of_current_month = today
+    # if today.month == 12:
+    #     last_day_of_current_month = datetime.date(today.year + 1, 1, 1) - datetime.timedelta(days=1)
+    # else:
+    #     last_day_of_current_month = datetime.date(today.year, today.month, 6) - datetime.timedelta(days=1)
     print(first_day_of_current_month, last_day_of_current_month)
     # last_day_of_previous_month = first_day_of_current_month - datetime.timedelta(days=1)
     # first_day_of_previous_month = datetime.date(last_day_of_previous_month.year, last_day_of_previous_month.month, 1)
     # last_day_of_preprevious_month = first_day_of_previous_month - datetime.timedelta(days=1)
-
+    exit()
     start_date = str(first_day_of_current_month)
     end_date = str(last_day_of_current_month)
     end_date1 = last_day_of_current_month.strftime('%d.%m.%Y')
