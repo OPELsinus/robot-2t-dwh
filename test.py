@@ -1,153 +1,109 @@
-# import os
-# import shutil
-#
-#
-#
-# from config import process_list_path
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
+import datetime
 
-import numpy as np
+import psycopg2
+from openpyxl import load_workbook
+
+from config import db_name, db_username, db_password
 
 
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-# from openpyxl import load_workbook, Workbook
-# import pandas as pd
-#
-# months = [
-#     'Январь',
-#     'Февраль',
-#     'Март',
-#     'Апрель',
-#     'Май',
-#     'Июнь',
-#     'Июль',
-#     'Август',
-#     'Сентябрь',
-#     'Октябрь',
-#     'Ноябрь',
-#     'Декабрь'
-# ]
-#
-# dick = dict()
-#
-# for file in os.listdir(r'C:\Users\Abdykarim.D\PycharmProjects\robot-2t-dwh\working_path\1583'):
-#     code = file.split('_')[-1].split('.')[0]
-#
-#     book = load_workbook(fr'C:\Users\Abdykarim.D\PycharmProjects\robot-2t-dwh\working_path\1583\{file}')
-#
-#     sheet = book.active
-#
-#     value = round(float(sheet[f'H12'].value) / 1000)
-#
-#     dick.update({code: [str(sheet[f'C11'].value)]})
-#     dick.get(code).append(value)
-#     dick.get(code).append(round(value - (value * 15 / 100)))
-#
-#     book.close()
-# print(dick)
-# print(dick.keys())
-#
-#
-# for file in os.listdir(r'C:\Users\Abdykarim.D\PycharmProjects\robot-2t-dwh\working_path\290'):
-#     code = file.split('_')[-1].split('.')[0]
-#     if code in dick.keys():
-#         df = pd.read_excel(fr'C:\Users\Abdykarim.D\PycharmProjects\robot-2t-dwh\working_path\290\{file}')
-#
-#         value = round((sum(df['Товарный остаток на конец, тг']) - sum(df['Сумма проблемного прихода'])) / 1000)
-#
-#         dick.get(code).append(value)
-# # print(list(dick.keys())[3])
-# book = Workbook()
-#
-# sheet = book.active
-#
-# end_date = '31.08.2023'
-# month = int(end_date.split('.')[1])
-#
-# letters = 'DEFGHIJKLMNO'
-#
-# for ind, letter in enumerate(letters):
-#
-#     sheet[f'{letter}1'].value = months[ind]
-#
-# start_row = 0
-# rows_to_merge = 3
-#
-# for i in range(len(dick)):
-#
-#     key = list(dick.keys())[i]
-#     values = dick.get(key)
-#
-#     sheet[f'A{start_row + 2}'].value = int(key)
-#     sheet.merge_cells(f'A{start_row + 2}:A{start_row + 4}')
-#
-#     sheet[f'B{start_row + 2}'].value = values[0]
-#     sheet.merge_cells(f'B{start_row + 2}:B{start_row + 4}')
-#
-#     sheet[f'C{start_row + 2}'].value = 'Всего'
-#     sheet[f'C{start_row + 3}'].value = 'Из них продовольственные товары'
-#     sheet[f'C{start_row + 4}'].value = 'Товарные запасы на конец отчетного месяца'
-#
-#     sheet[f'{letters[month - 1]}{start_row + 2}'].value = values[1]
-#     sheet[f'{letters[month - 1]}{start_row + 3}'].value = values[2]
-#     sheet[f'{letters[month - 1]}{start_row + 4}'].value = values[3]
-#
-#     start_row += rows_to_merge
-#
-# sheet.column_dimensions['B'].width = 44
-#
-# book.save('loooolus.xlsx')
-# book.close()
-# # print(c)
-# # print(c1)
-# #
-# # for i in dick.keys():
-# #     print(i, dick.get(i))
-# #
-# # print(len(dick))
-#
-#
-#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import pandas as pd
+
+
+
+def kek(date_, check):
+
+    s = 0
+
+    print(date_, check)
+
+    conn = psycopg2.connect(dbname=db_name, host='172.16.10.22', port='5432',
+                            user=db_username, password=db_password)
+
+    cur = conn.cursor(name='1583_first_part')
+
+    query = f"""
+           select payload from dwh_stgll."transaction" t
+            join dwh_stgll.actor a on a.id = t.actor_id
+            join dwh_stgll.card c on c.id = t.card_id
+            left join dwh_stgll.clients_loyalty cl on cl.order_hash = t.reference
+            left join dwh_data.fact_order_new fon on fon.source_order_id = cl.code_order
+            where fon.order_date >= '{date_}' and fon.order_code = '{check}'
+       """
+
+    cur.execute(query)
+
+    df = pd.DataFrame(cur.fetchall())
+
+    for rows in df.iterrows():
+        # print(rows)
+        payment = rows[1].iloc[0]
+        print(len(payment.get('payment_types')))
+        for pay in payment.get('payment_types'):
+            print(pay)
+            if pay.get('type') == 'BP':
+                s += pay.get('sum')
+        # print(payment.get('payment_types'))
+    # payment = df['payment_types']
+    # print(df)
+    # print(a)
+    # print(payment[1].get('type'))
+    print(s)
+    cur.close()
+    conn.close()
+
+    return s
+
+
+if __name__ == '__main__':
+
+    book = load_workbook(r'\\vault.magnum.local\Common\Stuff\_06_Бухгалтерия\Для робота\Процесс Сверка ОПТа\Файл сбора Сентябрь 2023.xlsx')
+
+    sheet = book.active
+    sum_ = 0
+    for row in range(3, sheet.max_row + 1):
+
+        input_date_object = datetime.datetime.strptime(sheet[f'B{row}'].value, "%d.%m.%Y")
+
+        output_date_string = input_date_object.strftime("%Y-%m-%d")
+
+        date_ = output_date_string
+        check_id = sheet[f'J{row}'].value
+
+        try:
+            ss = kek(date_, check_id)
+        except:
+            ss = 0
+        sum_ += ss
+
+        # break
+    print('SUM:', sum_)

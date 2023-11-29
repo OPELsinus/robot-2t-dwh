@@ -72,6 +72,8 @@ download_path = Path.home().joinpath('downloads')
 working_path = root_path.joinpath('working_path')
 working_path.mkdir(exist_ok=True, parents=True)
 
+ip_address = socket.gethostbyname(socket.gethostname())
+
 saving_path = global_path.joinpath(f".agent\\{robot_name}\\Output")
 saving_path.mkdir(exist_ok=True, parents=True)
 # reports_2t = download_path.joinpath('reports_2t')

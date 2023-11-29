@@ -9,7 +9,7 @@ from pathlib import Path
 import openpyxl
 from openpyxl import load_workbook, Workbook
 
-from config import saving_path, db_name, db_username, db_password, chat_id, tg_token, logger, saving_path, owa_username, owa_password
+from config import saving_path, db_name, db_username, db_password, chat_id, tg_token, logger, saving_path, owa_username, owa_password, ip_address
 
 import psycopg2
 import pandas as pd
@@ -140,6 +140,7 @@ def second_request(start_date, end_date):
 
 
 def one_big_excel():
+
     from openpyxl import load_workbook
     from openpyxl.styles import Alignment, PatternFill, Border
 
@@ -487,6 +488,7 @@ def report_290(branches, branch_id, start_date, end_date):
 
 
 def get_all_branches():
+
     conn = psycopg2.connect(dbname=db_name, host='172.16.10.22', port='5432',
                             user=db_username, password=db_password)
 
@@ -650,20 +652,74 @@ def archive_files(start_date, end_date, value):
     return zip_file_path
 
 
+def is_today_start():
+
+    calendar = pd.read_excel(fr'\\vault.magnum.local\Common\Stuff\_05_Финансовый Департамент\01. Казначейство\Сверка\Сверка РОБОТ\Шаблоны для робота (не удалять)\Производственный календарь 2023.xlsx')
+
+    today_ = datetime.datetime.now().strftime('%d.%m.%y')
+
+    cur_day_index = calendar[calendar['Day'] == today_]['Type'].index[0]
+    cur_day_type = calendar[calendar['Day'] == today_]['Type'].iloc[0]
+
+    count = 0
+    day_ = None
+    found = False
+
+    for i in range(1, 31):
+
+        try:
+            day = int(calendar['Day'].iloc[cur_day_index + i].split('.')[0])
+            print(calendar['Day'].iloc[cur_day_index + i], calendar['Weekday'].iloc[cur_day_index + i], calendar['Type'].iloc[cur_day_index + i])
+
+        except:
+            day = 1
+
+        if day == 1:
+
+            for j in range(1, 6):
+                print(cur_day_index, i, j, cur_day_index + i - j)
+
+                print('---', calendar['Day'].iloc[cur_day_index + i - j], calendar['Weekday'].iloc[cur_day_index + i - j], calendar['Type'].iloc[cur_day_index + i - j])
+
+                if calendar['Type'].iloc[cur_day_index + i - j] == 'Working':
+                    count += 1
+                if count == 3:
+                    found = True
+                    day_ = calendar['Day'].iloc[cur_day_index + i - j]
+                    break
+        if found:
+            break
+
+    print(cur_day_index, cur_day_type)
+
+    print(day_)
+
+    if today_ == day_:  # * datetime.datetime.today().strftime('%d.%m.%y') == day_:
+        return True
+    else:
+        return False
+
+
 if __name__ == '__main__':
+
+    if not is_today_start():
+        logger.info(f'Not working day - {datetime.date.today()}')
+        exit()
 
     update_credentials(Path(r'\\172.16.8.87\d'), owa_username, owa_password)
 
-    with suppress(Exception):
-        shutil.rmtree(os.path.join(saving_path, '290'))
-    with suppress(Exception):
-        shutil.rmtree(os.path.join(saving_path, '1583'))
-    with suppress(Exception):
-        shutil.rmtree(os.path.join(saving_path, 'Выргузка 2Т'))
+    if ip_address == '10.70.2.9':
+        # with suppress(Exception):
+        #     shutil.rmtree(os.path.join(saving_path, '290'))
+        with suppress(Exception):
+            shutil.rmtree(os.path.join(saving_path, '1583'))
+        with suppress(Exception):
+            shutil.rmtree(os.path.join(saving_path, 'Выргузка 2Т'))
 
     time_started = time.time()
 
-    today = datetime.date(2023, 9, 28)
+    today = datetime.date.today()
+    # today = datetime.date(2023, 9, 28)
     first_day_of_current_month = today - datetime.timedelta(days=30)  # datetime.date(today.year, today.month, 1)
     last_day_of_current_month = today
     # if today.month == 12:
@@ -685,14 +741,20 @@ if __name__ == '__main__':
     all_branches_ids = get_all_branches()
 
     # logger.info(all_branches_ids, len(all_branches_ids))
-    print(all_branches_ids)
+    print(ip_address)
+    # if ip_address == '10.70.2.9':
+    #     all_branches_ids = all_branches_ids[len(all_branches_ids) // 2:]
+    # else:
+    #     print('kek')
+    #     all_branches_ids = all_branches_ids[:len(all_branches_ids) // 2 + 1]
+
+    # print(all_branches_ids)
     # for i in range(len(all_branches_ids)):
     #     #
     #     logger.info(f'Started {i} / {len(all_branches_ids)}')
     #     try:
+    #         print(all_branches_ids['Номера филиалов'].iloc[i])
     #         current_branch = get_store_ids_by_branch_id(all_branches_ids['Номера филиалов'].iloc[i])
-    #
-    #         # print(current_branch['Код магазина'].iloc[0])
     #
     #         current_stores = list(current_branch['Номер магазина'])
     #
@@ -700,8 +762,9 @@ if __name__ == '__main__':
     #
     #         current_stores = ', '.join(f"{el}" for el in current_stores)
     #         logger.info(current_stores)
-    #         print(current_stores)
-    #         # break
+    #         print(current_branch)
+    #         print('-----------')
+    #
     #         start_time = time.time()
     #         df = report_290(current_stores, current_branch['Код магазина'].iloc[0], datetime.datetime.strptime(start_date, "%Y-%m-%d").strftime("%d.%m.%Y"), datetime.datetime.strptime(end_date, "%Y-%m-%d").strftime("%d.%m.%Y"))
     #         end_time = time.time()
@@ -739,7 +802,7 @@ if __name__ == '__main__':
 
     create_final_big_excel(end_date1)
 
-    archive_files(start_date, end_date, '290')
+    # archive_files(start_date, end_date, '290')
     archive_files(start_date, end_date, '1583')
 
     time_finished = time.time()
