@@ -28,33 +28,33 @@ def first_request(start_date, end_date):
         select qfo.source_store_id,
                ds.sale_source_obj_id,
                ds.store_name,
-               dss.name_1c,
+               dss.name_sale_object_for_print,
                sum(qfo.cnt_wares_pos_detail)                                                             as "Кол-во товаров в чеках", -- "Количество товаров в чеке"
                sum(qfo.order_sum_with_vat)                                                               as "Выручка, тг с НДС",
                sum(qfo.order_sum_without_vat)                                                            as "Выручка, тг без НДС",
                sum(qfo.is_sale_order)                                                                    as "Количество чеков"
         from dwh_data.qs_fact_order qfo
         left join dwh_data.dim_store ds on ds.source_store_id = qfo.source_store_id and current_date between ds.datestart and ds.dateend
-        left join dwh_data.dim_store_src dss on dss.source_store_id = qfo.source_store_id
+        left join dwh_data.dim_branches_src dss on dss.id_sale_object = qfo.source_branch_id
         where date(qfo.order_date) between to_date('{start_date}', 'YYYY-MM-DD') and to_date('{end_date}', 'YYYY-MM-DD')
-                and qfo."source_store_id"::int > 0 and ds."store_name" like '%Торговый%'
-        group by ds.sale_source_obj_id, qfo.source_store_id, ds.store_name, dss.name_1c
+        and qfo."source_store_id"::int > 0 and ds."store_name" like '%Торговый%'
+        group by ds.sale_source_obj_id, qfo.source_store_id, ds.store_name, dss.name_sale_object_for_print
              union all
         select   qfog.source_store_id,
                  ds.sale_source_obj_id,
                  ds.store_name,
-                 dss.name_1c,
+                 dss.name_sale_object_for_print,
                  sum(qfog.count_wares)                            as quantity,
                  sum(qfog.sum_sale_vat)                           as order_sum_with_vat,
                  sum(qfog.sum_sale_no_vat)                        as order_sum_without_vat,
-                 sum(qfog.is_sale_order)                          as sale_order_cnt
+                 sum(qfog.is_sale_order)                           as sale_order_cnt
         from dwh_data.qs_fact_order_gross qfog
         left join dwh_data.dim_store ds on ds.source_store_id = qfog.source_store_id and current_date between ds.datestart and ds.dateend
-        left join dwh_data.dim_store_src dss on dss.source_store_id = qfog.source_store_id
+        left join dwh_data.dim_branches_src dss on dss.id_sale_object = qfog.source_branch_id
         where date(qfog.order_date) between to_date('{start_date}', 'YYYY-MM-DD') and to_date('{end_date}', 'YYYY-MM-DD')
-              and qfog."source_store_id"::int > 0 and ds."store_name" like '%Торговый%'
-        group by ds.sale_source_obj_id, qfog.source_store_id, ds.store_name, dss.name_1c
-        order by source_store_id;
+        and qfog."source_store_id"::int > 0 and ds."store_name" like '%Торговый%'
+        group by ds.sale_source_obj_id, qfog.source_store_id, ds.store_name, dss.name_sale_object_for_print
+        order by source_store_id
     """
 
     cur.execute(query)
@@ -580,6 +580,7 @@ def create_final_big_excel(end_date):
     for file in os.listdir(os.path.join(saving_path, '290')):
         code = file.split('_')[-1].split('.')[0]
         if code in dick.keys():
+
             df = pd.read_excel(os.path.join(os.path.join(saving_path, '290'), file))
 
             value = round((sum(df['Товарный остаток на конец, тг']) - sum(df['Сумма проблемного прихода'])) / 1000)
@@ -707,7 +708,7 @@ if __name__ == '__main__':
         exit()
 
     update_credentials(Path(r'\\172.16.8.87\d'), owa_username, owa_password)
-
+    print(saving_path)
     if ip_address == '10.70.2.9':
         # with suppress(Exception):
         #     shutil.rmtree(os.path.join(saving_path, '290'))
