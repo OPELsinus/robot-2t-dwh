@@ -9,7 +9,7 @@ from pathlib import Path
 import openpyxl
 from openpyxl import load_workbook, Workbook
 
-from config import saving_path, db_name, db_username, db_password, chat_id, tg_token, logger, saving_path, owa_username, owa_password, ip_address
+from config import saving_path, db_name, db_username, db_password, chat_id, tg_token, logger, saving_path, owa_username, owa_password, ip_address, calendar_path
 
 import psycopg2
 import pandas as pd
@@ -202,7 +202,7 @@ def one_big_excel():
 
 def saving_reports(df4, start_date, end_date):
     for i in range(len(df4)):
-        book = openpyxl.load_workbook('samples\\2023-04-30_2023-05-31_1583_4.xlsx')
+        book = openpyxl.load_workbook(r'\\172.16.8.87\d\.rpa\.agent\robot-2t-dwh\\samples\2023-04-30_2023-05-31_1583_4.xlsx')
         sheet = book.active
 
         try:
@@ -655,7 +655,7 @@ def archive_files(start_date, end_date, value):
 
 def is_today_start():
 
-    calendar = pd.read_excel(fr'\\vault.magnum.local\Common\Stuff\_05_Финансовый Департамент\01. Казначейство\Сверка\Сверка РОБОТ\Шаблоны для робота (не удалять)\Производственный календарь 2023.xlsx')
+    calendar = pd.read_excel(calendar_path)
 
     today_ = datetime.datetime.now().strftime('%d.%m.%y')
 
@@ -709,7 +709,7 @@ if __name__ == '__main__':
 
     update_credentials(Path(r'\\172.16.8.87\d'), owa_username, owa_password)
     print(saving_path)
-    if ip_address == '10.70.2.9':
+    if ip_address == '10.70.2.11':
         # with suppress(Exception):
         #     shutil.rmtree(os.path.join(saving_path, '290'))
         with suppress(Exception):
