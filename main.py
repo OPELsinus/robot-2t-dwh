@@ -710,8 +710,8 @@ if __name__ == '__main__':
     update_credentials(Path(r'\\172.16.8.87\d'), owa_username, owa_password)
     print(saving_path)
     if ip_address == '10.70.2.11':
-        # with suppress(Exception):
-        #     shutil.rmtree(os.path.join(saving_path, '290'))
+        with suppress(Exception):
+            shutil.rmtree(os.path.join(saving_path, '290'))
         with suppress(Exception):
             shutil.rmtree(os.path.join(saving_path, '1583'))
         with suppress(Exception):
@@ -749,33 +749,33 @@ if __name__ == '__main__':
     #     print('kek')
     #     all_branches_ids = all_branches_ids[:len(all_branches_ids) // 2 + 1]
 
-    # print(all_branches_ids)
-    # for i in range(len(all_branches_ids)):
-    #     #
-    #     logger.info(f'Started {i} / {len(all_branches_ids)}')
-    #     try:
-    #         print(all_branches_ids['Номера филиалов'].iloc[i])
-    #         current_branch = get_store_ids_by_branch_id(all_branches_ids['Номера филиалов'].iloc[i])
-    #
-    #         current_stores = list(current_branch['Номер магазина'])
-    #
-    #         current_stores = [f"'{el}'" for el in current_stores]
-    #
-    #         current_stores = ', '.join(f"{el}" for el in current_stores)
-    #         logger.info(current_stores)
-    #         print(current_branch)
-    #         print('-----------')
-    #
-    #         start_time = time.time()
-    #         df = report_290(current_stores, current_branch['Код магазина'].iloc[0], datetime.datetime.strptime(start_date, "%Y-%m-%d").strftime("%d.%m.%Y"), datetime.datetime.strptime(end_date, "%Y-%m-%d").strftime("%d.%m.%Y"))
-    #         end_time = time.time()
-    #
-    #         # print(df, df['Название магазина'])
-    #
-    #         logger.info(f'Executed Time: {round(end_time - start_time)}')
-    #
-    #     except Exception as exc:
-    #         logger.info(f'Error occured: {exc}')
+    print(all_branches_ids)
+    for i in range(len(all_branches_ids)):
+        #
+        logger.info(f'Started {i} / {len(all_branches_ids)}')
+        try:
+            print(all_branches_ids['Номера филиалов'].iloc[i])
+            current_branch = get_store_ids_by_branch_id(all_branches_ids['Номера филиалов'].iloc[i])
+
+            current_stores = list(current_branch['Номер магазина'])
+
+            current_stores = [f"'{el}'" for el in current_stores]
+
+            current_stores = ', '.join(f"{el}" for el in current_stores)
+            logger.info(current_stores)
+            print(current_branch)
+            print('-----------')
+
+            start_time = time.time()
+            df = report_290(current_stores, current_branch['Код магазина'].iloc[0], datetime.datetime.strptime(start_date, "%Y-%m-%d").strftime("%d.%m.%Y"), datetime.datetime.strptime(end_date, "%Y-%m-%d").strftime("%d.%m.%Y"))
+            end_time = time.time()
+
+            # print(df, df['Название магазина'])
+
+            logger.info(f'Executed Time: {round(end_time - start_time)}')
+
+        except Exception as exc:
+            logger.info(f'Error occured: {exc}')
 
     # ? 1583 report
     df = first_request(start_date, end_date)
@@ -797,17 +797,19 @@ if __name__ == '__main__':
     # logger.info('Saving reports')
     saving_reports(df4, start_date, end_date)
 
+    # ? Finished 1583
+
     one_big_excel()
 
     logger.info('Started final big excel')
 
     create_final_big_excel(end_date1)
 
-    # archive_files(start_date, end_date, '290')
+    archive_files(start_date, end_date, '290')
     archive_files(start_date, end_date, '1583')
 
     time_finished = time.time()
 
-    # send_message_to_tg(tg_token, chat_id, f'Выгрузка отчёта 1583 завершилась.\nЗатраченное время: {str(time_finished - time_started)[:6]}c\nКоличесвто филиалов: {len(df4)}')
+    # send_message_to_tg(tg_token, chat_id, f'Выгрузка отчёта 2T завершилась.\nЗатраченное время: {str(time_finished - time_started)[:6]}c\nКоличесвто филиалов: {len(df4)}')
 
     print('Saved successfully')
